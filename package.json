@@ -3,10 +3,10 @@
 	"description" : "An memonic api wrapper for node.js",
 	"version" : "0.0.1",
 	"author": "임창진 <callin2@gmail.com>",
-	"homepage" : "http://github.com/",
+	"homepage" : "https://github.com/callin2/memonic",
 	"repository": {
 		"type": "git",
-		"url": "http://github.com/indexzero/winston.git" 
+		"url": "https://callin2@github.com/callin2/memonic.git" 
 	},
 	"keywords": ["api", "memonic"],
 	"dependencies": {
