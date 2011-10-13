@@ -1,0 +1,24 @@
+{
+	"name" : "memonic",
+	"description" : "An memonic api wrapper for node.js",
+	"version" : "0.0.1",
+	"author": "임창진 <callin2@gmail.com>",
+	"homepage" : "http://github.com/",
+	"repository": {
+		"type": "git",
+		"url": "http://github.com/indexzero/winston.git" 
+	},
+	"keywords": ["api", "memonic"],
+	"dependencies": {
+		"request": "2.1.1",
+		"underscore": "1.2.0",
+		"lru-cache": "1.0.4"
+	},
+	"devDependencies": {
+		"vows": "0.5.x >=0.5.11"
+	},
+	"scripts": { "test": "vows --spec test/*" },
+	"engines": { "node": ">= 0.4.0" }
+}	
+	
+	

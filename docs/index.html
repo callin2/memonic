@@ -1,0 +1,153 @@
+<!DOCTYPE html>  <html> <head>   <title>index.js</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               index.js             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>               <h1>Memonic</h1>
+
+<p>memonic api wrapper for nodejs.
+it support basic auth only.
+curruntly this wrapper only support two api call <code>items</code> and <code>item</code> .
+you should read <a href="http://www.memonic.com/developers/api/">api document</a> first </p>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">var</span> <span class="nx">request</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;request&#39;</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">LRU</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;lru-cache&quot;</span><span class="p">)</span>
+<span class="kd">var</span> <span class="nx">_</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;underscore&#39;</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">memonicUrl</span> <span class="o">=</span> <span class="s1">&#39;https://api.memonic.com/v2&#39;</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">apiKey</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">pool</span> <span class="o">=</span> <span class="nx">LRU</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <h2>constructor function.</h2>
+
+<p>it  takes one parameter <code>_apikey</code>. it is not optional parameter.</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="kd">function</span> <span class="nx">Memonic</span><span class="p">(</span> <span class="nx">_apikey</span> <span class="p">)</span> <span class="p">{</span>
+	<span class="nx">apiKey</span> <span class="o">=</span> <span class="nx">_apikey</span><span class="p">;</span>
+	
+    <span class="k">this</span><span class="p">.</span><span class="nx">userId</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">auth</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">isConnected</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">queue</span> <span class="o">=</span> <span class="p">[];</span>
+<span class="p">}</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <h2>connect</h2>
+
+<p>it accept 3 parameter <code>id</code>, <code>password</code>, <code>callback</code>. last parameter callback is optional.
+callback type is <code>function(err , internalUserId)</code>.
+before connected to memonic api server, other function call just wait until connected. </p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">Memonic</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">connect</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">id</span><span class="p">,</span> <span class="nx">passwd</span><span class="p">,</span> <span class="nx">callback</span> <span class="p">)</span> <span class="p">{</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">auth</span> <span class="o">=</span> <span class="s1">&#39;Basic &#39;</span> <span class="o">+</span> <span class="k">new</span> <span class="nx">Buffer</span><span class="p">(</span><span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="nx">passwd</span><span class="p">).</span><span class="nx">toString</span><span class="p">(</span><span class="s1">&#39;base64&#39;</span><span class="p">);</span>
+    
+    <span class="k">if</span><span class="p">(</span> <span class="nx">pool</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span> <span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="nx">passwd</span> <span class="p">)</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">userId</span> <span class="o">=</span> <span class="nx">pool</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span> <span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="nx">passwd</span> <span class="p">);</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">isConnected</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="k">if</span><span class="p">(</span><span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">userId</span> <span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    <span class="k">this</span><span class="p">.</span><span class="nx">isConnected</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>        
+	<span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+	<span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span>  <span class="nx">memonicUrl</span> <span class="o">+</span> <span class="s1">&#39;/users.json?apikey=&#39;</span> <span class="o">+</span> <span class="nx">apiKey</span><span class="p">;</span>
+	
+    <span class="nx">request</span><span class="p">(</span>
+        <span class="p">{</span> 
+            <span class="s1">&#39;method&#39;</span> <span class="o">:</span> <span class="s1">&#39;GET&#39;</span>
+          <span class="p">,</span> <span class="s1">&#39;url&#39;</span> <span class="o">:</span> <span class="nx">url</span>
+          <span class="p">,</span> <span class="s1">&#39;headers&#39;</span> <span class="o">:</span> <span class="p">{</span>
+                <span class="s1">&#39;Authorization&#39;</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">auth</span>
+          <span class="p">}</span>
+        <span class="p">},</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">response</span><span class="p">,</span> <span class="nx">body</span><span class="p">){</span>
+            <span class="k">if</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span><span class="p">(</span><span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>       
+                    <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span><span class="k">else</span> <span class="p">{</span>
+                <span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">body</span><span class="p">);</span>
+                <span class="k">if</span><span class="p">(</span><span class="nx">result</span><span class="p">.</span><span class="nx">message</span><span class="p">)</span> <span class="p">{</span>
+                	<span class="o">!!</span><span class="nx">callback</span> <span class="o">&amp;&amp;</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">result</span><span class="p">.</span><span class="nx">message</span><span class="p">);</span>
+                	<span class="k">return</span><span class="p">;</span>
+                <span class="p">}</span><span class="k">else</span> <span class="k">if</span><span class="p">(</span> <span class="o">!</span><span class="nx">result</span><span class="p">.</span><span class="nx">users</span> <span class="o">||</span> <span class="nx">result</span><span class="p">.</span><span class="nx">users</span><span class="p">.</span><span class="nx">length</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+                	<span class="o">!!</span><span class="nx">callabck</span> <span class="o">&amp;&amp;</span> <span class="nx">callback</span><span class="p">(</span><span class="s1">&#39;memonic user info incorrect&#39;</span><span class="p">);</span>
+                	<span class="k">return</span><span class="p">;</span>
+                <span class="p">}</span>
+                
+                <span class="nx">self</span><span class="p">.</span><span class="nx">userId</span> <span class="o">=</span> <span class="nx">result</span><span class="p">.</span><span class="nx">users</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">id</span><span class="p">;</span>
+                <span class="nx">pool</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span> <span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="nx">passwd</span> <span class="p">,</span> <span class="nx">self</span><span class="p">.</span><span class="nx">userId</span> <span class="p">);</span>
+                <span class="nx">self</span><span class="p">.</span><span class="nx">isConnected</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+                
+                <span class="k">if</span><span class="p">(</span><span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>                
+                    <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">self</span><span class="p">.</span><span class="nx">userId</span><span class="p">);</span>
+                <span class="p">}</span>
+                </pre></div>             </td>           </tr>                               <tr id="section-4">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-4">&#182;</a>               </div>               <p>if waiting api call exist then execute,</p>             </td>             <td class="code">               <div class="highlight"><pre>                <span class="k">while</span><span class="p">(</span><span class="nx">self</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">)</span> <span class="p">{</span>
+                	<span class="kd">var</span> <span class="nx">waitFunc</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">shift</span><span class="p">();</span></pre></div>             </td>           </tr>                               <tr id="section-5">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-5">&#182;</a>               </div>               <p>console.log(waitFunc.toString());</p>             </td>             <td class="code">               <div class="highlight"><pre>                	<span class="nx">waitFunc</span><span class="p">();</span>
+                <span class="p">}</span>                
+            <span class="p">}</span>
+        <span class="p">}</span>
+	<span class="p">);</span>    
+<span class="p">}</span></pre></div>             </td>           </tr>                               <tr id="section-6">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-6">&#182;</a>               </div>               <h2>items</h2>
+
+<p>get all memonic note items list.
+option type is object. possible option name is <code>page</code> and <code>pagesize</code>
+3rd parameter connected is internal use only</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">Memonic</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">items</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">option</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="nx">connected</span> <span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+    
+    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">isConnected</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">connected</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+            <span class="nx">self</span><span class="p">.</span><span class="nx">items</span><span class="p">(</span><span class="nx">option</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+        <span class="p">});</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="nx">option</span><span class="p">)</span>  <span class="nx">option</span> <span class="o">=</span> <span class="p">{};</span>
+    <span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">memonicUrl</span> <span class="o">+</span> <span class="s1">&#39;/users/&#39;</span><span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">userId</span> <span class="o">+</span><span class="s1">&#39;/items.json?apikey=&#39;</span> <span class="o">+</span> <span class="nx">apiKey</span><span class="p">;</span>
+    
+    <span class="nx">_</span><span class="p">([</span><span class="s1">&#39;page&#39;</span><span class="p">,</span><span class="s1">&#39;pagesize&#39;</span><span class="p">]).</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">v</span><span class="p">){</span>
+        <span class="k">if</span><span class="p">(</span><span class="nx">option</span><span class="p">[</span><span class="nx">v</span><span class="p">])</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">url</span> <span class="o">+</span> <span class="s1">&#39;&amp;&#39;</span> <span class="o">+</span> <span class="nx">v</span> <span class="o">+</span> <span class="s1">&#39;=&#39;</span> <span class="o">+</span> <span class="nx">option</span><span class="p">[</span><span class="nx">v</span><span class="p">];</span>
+    <span class="p">});</span>
+    
+    <span class="nx">request</span><span class="p">(</span>
+        <span class="p">{</span> 
+            <span class="s1">&#39;method&#39;</span>    <span class="o">:</span> <span class="s1">&#39;GET&#39;</span>
+          <span class="p">,</span> <span class="s1">&#39;url&#39;</span>       <span class="o">:</span> <span class="nx">url</span>
+          <span class="p">,</span> <span class="s1">&#39;headers&#39;</span>   <span class="o">:</span> <span class="p">{</span>
+                <span class="s1">&#39;Authorization&#39;</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">auth</span>
+          <span class="p">}</span>
+        <span class="p">},</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">response</span><span class="p">,</span> <span class="nx">body</span><span class="p">){</span>
+            <span class="k">if</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+            <span class="p">}</span><span class="k">else</span> <span class="p">{</span>
+                <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">body</span><span class="p">));</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+	<span class="p">);</span>      
+<span class="p">}</span></pre></div>             </td>           </tr>                               <tr id="section-7">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-7">&#182;</a>               </div>               <h2>item</h2>
+
+<p>get a memonic note item.
+option type is object. possible option name is <code>thumbnails</code> 
+4th parameter connected is internal use only</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nx">Memonic</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">item</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">itemId</span><span class="p">,</span> <span class="nx">option</span><span class="p">,</span> <span class="nx">callback</span><span class="p">,</span> <span class="nx">connected</span> <span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+    
+    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">isConnected</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">connected</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">queue</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+            <span class="nx">self</span><span class="p">.</span><span class="nx">item</span><span class="p">(</span><span class="nx">itemId</span><span class="p">,</span><span class="nx">option</span><span class="p">,</span><span class="nx">callback</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+        <span class="p">});</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    <span class="nx">option</span> <span class="o">=</span>  <span class="nx">option</span> <span class="o">||</span> <span class="p">{};</span>
+    <span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">memonicUrl</span> <span class="o">+</span> <span class="s1">&#39;/users/&#39;</span><span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">userId</span> <span class="o">+</span><span class="s1">&#39;/items/&#39;</span> <span class="o">+</span> <span class="nx">itemId</span> <span class="o">+</span><span class="s1">&#39;.json?apikey=&#39;</span> <span class="o">+</span> <span class="nx">apiKey</span><span class="p">;</span>   
+    
+    <span class="nx">_</span><span class="p">([</span><span class="s1">&#39;page&#39;</span><span class="p">,</span><span class="s1">&#39;pagesize&#39;</span><span class="p">]).</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">v</span><span class="p">){</span>
+        <span class="k">if</span><span class="p">(</span><span class="nx">option</span><span class="p">[</span><span class="nx">v</span><span class="p">])</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">url</span> <span class="o">+</span> <span class="s1">&#39;&amp;&#39;</span> <span class="o">+</span> <span class="nx">v</span> <span class="o">+</span> <span class="s1">&#39;=&#39;</span> <span class="o">+</span> <span class="nx">option</span><span class="p">[</span><span class="nx">v</span><span class="p">];</span>
+    <span class="p">});</span>
+    
+    <span class="nx">request</span><span class="p">(</span>
+        <span class="p">{</span> 
+            <span class="s1">&#39;method&#39;</span>    <span class="o">:</span> <span class="s1">&#39;GET&#39;</span>
+          <span class="p">,</span> <span class="s1">&#39;url&#39;</span>       <span class="o">:</span> <span class="nx">url</span>
+          <span class="p">,</span> <span class="s1">&#39;headers&#39;</span>   <span class="o">:</span> <span class="p">{</span>
+                <span class="s1">&#39;Authorization&#39;</span> <span class="o">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">auth</span>
+          <span class="p">}</span>
+        <span class="p">},</span><span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">response</span><span class="p">,</span> <span class="nx">body</span><span class="p">){</span>
+            <span class="k">if</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+            <span class="p">}</span><span class="k">else</span> <span class="p">{</span>
+                <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">body</span><span class="p">));</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+	<span class="p">);</span>      
+<span class="p">}</span>
+
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">Memonic</span><span class="p">;</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 
